@@ -9,12 +9,16 @@ import BankLogo from "@/components/BankLogo";
 
 const COLOURS = ["bg-lavender text-primary-dark", "bg-mint text-green-ink", "bg-pink text-ink", "bg-amber-bg text-amber"];
 
+type Upload = { filename: string; kind: string };
+
 export default function Connect() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [banks, setBanks] = useState<Institution[] | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [conn, setConn] = useState<Connection | null>(null);
+  const [upload, setUpload] = useState<Upload | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Coming back from the bank authorisation stub: show the connected accounts.
@@ -47,6 +51,19 @@ export default function Connect() {
     setConn(null);
   }
 
+  // Front-end dummy (feature 2): nothing is sent to the API; analysis uses the demo data
+  async function uploadFile(file: File) {
+    setError(null);
+    const kind = file.name.split(".").pop()?.toUpperCase() ?? "";
+    if (kind !== "CSV" && kind !== "PDF") return setError("Upload a CSV or PDF file");
+    setUploading(true);
+    await new Promise((r) => setTimeout(r, 1200));
+    setUpload({ filename: file.name, kind });
+    setUploading(false);
+  }
+
+  const done = !!conn || !!upload;
+
   return (
     <Screen>
       <TopBar title="Step 2 of 3" back="/consent" />
@@ -75,16 +92,16 @@ export default function Connect() {
           </div>
         </Card>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className={`flex flex-col gap-2 ${upload || uploading ? "opacity-60" : ""}`}>
           <label htmlFor="bank" className="text-[14px] font-medium text-muted">Find your bank</label>
           <input id="bank" type="search" placeholder="Search banks" value={query} autoComplete="off"
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => setQuery(e.target.value)} disabled={!!upload || uploading}
             className="min-h-[52px] rounded-full border border-field-line bg-field px-5 text-[15px]" />
 
           <Card className="px-2 py-1.5">
             {!banks && !error && <div className="px-2 py-4 text-[14px] text-muted">Loading banks…</div>}
             {banks && shown.length === 0 && (
-              <div className="px-2 py-4 text-[14px] text-muted">No match. Try another name.</div>
+              <div className="px-2 py-4 text-[14px] text-muted">No match. Try another name, or upload a statement below.</div>
             )}
             <div role="radiogroup" aria-label="Choose your bank">
               {shown.map((b, i) => {
@@ -93,7 +110,7 @@ export default function Connect() {
                   <label key={b.id}
                     className={`flex min-h-[60px] cursor-pointer items-center gap-3 rounded-[20px] px-2 ${
                       on ? "bg-violet-soft" : ""} ${i < shown.length - 1 ? "border-b border-hair" : ""}`}>
-                    <input type="radio" name="bank" value={b.id} checked={on}
+                    <input type="radio" name="bank" value={b.id} checked={on} disabled={!!upload || uploading}
                       onChange={() => setSelected(b.id)} className="sr-only" />
                     <BankLogo name={b.name} logo={b.logo} initials={b.initials} fallbackClass={COLOURS[i % COLOURS.length]} />
                     <span className={`grow text-[15px] ${on ? "font-semibold" : "font-medium"}`}>{b.name}</span>
@@ -117,29 +134,44 @@ export default function Connect() {
         <span className="h-px grow bg-[#ECECF0]" />or<span className="h-px grow bg-[#ECECF0]" />
       </div>
 
-      {/* Placeholder (feature 2): statement upload isn't built yet, so it's shown disabled */}
-      <div aria-disabled="true"
-        className="flex cursor-not-allowed items-start gap-3.5 rounded-card border-[1.5px] border-dashed border-[#CFC8F3] bg-[#FAF9FF] p-4 opacity-60">
+      <label className={`flex items-start gap-3.5 rounded-card border-[1.5px] border-dashed border-[#CFC8F3] bg-[#FAF9FF] p-4 ${
+        uploading || done ? "cursor-default" : "cursor-pointer"} ${conn ? "opacity-60" : ""} has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-primary`}>
+        <input type="file" accept=".csv,.pdf,text/csv,application/pdf" className="sr-only" disabled={uploading || done}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) uploadFile(f);
+          }} />
         <IconCircle className="bg-pink"><Icon name="upload" /></IconCircle>
-        <span className="flex flex-col gap-0.5">
-          <span className="text-[15px] font-medium">Upload a statement (CSV or PDF) <Pill size="sm">Coming soon</Pill></span>
+        <span className="flex min-w-0 grow flex-col gap-0.5">
+          <span className="truncate text-[15px] font-medium">
+            {upload ? upload.filename : uploading ? "Reading statement…" : "Upload a statement (CSV or PDF)"}
+          </span>
           <span className="text-[13px] leading-[1.45] text-muted">
-            If your bank isn&apos;t listed. Uploaded statements are marked &ldquo;self-uploaded&rdquo; and count as lower confidence.
+            {upload
+              ? `${upload.kind} · marked “self-uploaded”, counts as lower confidence`
+              : <>If your bank isn&apos;t listed. Uploaded statements are marked &ldquo;self-uploaded&rdquo; and count as lower confidence.</>}
           </span>
         </span>
-      </div>
+        {upload && <Pill tone="amber">Uploaded</Pill>}
+      </label>
+      {upload && (
+        <button type="button" onClick={() => setUpload(null)} className="-mt-2 self-end text-[13px] font-medium text-primary">
+          Remove statement
+        </button>
+      )}
 
       {error && <ErrorBox message={error} />}
       <div className="grow" />
-      {conn ? (
+      {done ? (
         <>
           <div className="text-center text-[13px] text-muted">
-            Fetched {conn.transaction_count} transactions · {conn.period}
+            {conn ? `Fetched ${conn.transaction_count} transactions · ${conn.period}` : "Statement uploaded"}
           </div>
           <ButtonLink href="/found">Analyse my earnings</ButtonLink>
         </>
       ) : (
-        <Button onClick={connect} disabled={!selected}>
+        <Button onClick={connect} disabled={!selected || uploading}>
           {bank ? `Connect to ${bank.name}` : "Choose your bank"}
         </Button>
       )}

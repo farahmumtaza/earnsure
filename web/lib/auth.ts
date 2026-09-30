@@ -52,7 +52,10 @@ export async function accessToken(): Promise<string | null> {
 
 export async function authStep(): Promise<AuthStep> {
   const sb = await getSupabase();
-  if (!sb) return "done";
+  if (!sb) {
+    // Sign-in off: nothing to do. Sign-in on but not configured: nobody can be signed in.
+    return (await getAuthConfig()).enabled ? "signed-out" : "done";
+  }
   const { data } = await sb.auth.getSession();
   if (!data.session) return "signed-out";
   if (!(await getAuthConfig()).require_mfa) return "done";
@@ -60,6 +63,11 @@ export async function authStep(): Promise<AuthStep> {
   if (aal.data?.currentLevel === "aal2") return "done";
   const factors = await sb.auth.mfa.listFactors();
   return factors.data?.totp.length ? "verify" : "enrol";
+}
+
+/** Sign-in is switched on but the browser can't run it (e.g. SUPABASE_ANON_KEY missing). */
+export function misconfigured(cfg: AuthConfig): boolean {
+  return cfg.enabled && (!cfg.supabase_url || !cfg.supabase_anon_key);
 }
 
 /** Page to send someone to when the API says they aren't (fully) signed in. */

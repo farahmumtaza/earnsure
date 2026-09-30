@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { authStep, getSupabase } from "@/lib/auth";
+import { authStep, getSupabase, misconfigured } from "@/lib/auth";
 import { continueAfterSignIn, GoogleG, useAuthConfig } from "@/components/AuthUI";
 import { Button, Card, ErrorBox, Icon, IconCircle, Loading, PageTitle, Pill, Screen, Spinner, TopBar } from "@/components/ui";
 
@@ -15,10 +15,13 @@ export default function SignIn() {
   const cfg = useAuthConfig();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const configError = cfg && misconfigured(cfg)
+    ? "Sign-in is switched on (AUTH_ENABLED=true) but SUPABASE_ANON_KEY isn't set. Add it to the environment and redeploy, or set AUTH_ENABLED=false for demo mode."
+    : null;
 
   // Already signed in? Skip ahead to MFA or into the app.
   useEffect(() => {
-    if (!cfg?.enabled) return;
+    if (!cfg?.enabled || misconfigured(cfg)) return;
     authStep().then((step) => {
       if (step === "done") continueAfterSignIn(router).catch((e) => setError(e.message));
       else if (step !== "signed-out") router.replace("/sign-in/mfa");
@@ -55,7 +58,7 @@ export default function SignIn() {
       {cfg && (
         <>
           <Card className="flex flex-col gap-3 p-[18px]">
-            <button type="button" onClick={google} disabled={busy}
+            <button type="button" onClick={google} disabled={busy || !!configError}
               className="flex min-h-14 items-center justify-center gap-3 rounded-full border border-line bg-white text-[16px] font-medium text-ink disabled:opacity-60">
               {busy ? <span className="text-primary"><Spinner /></span> : <GoogleG />}
               {busy ? "Opening Google…" : "Continue with Google"}
@@ -77,7 +80,7 @@ export default function SignIn() {
               <span>These screens show the flow without creating an account. You can skip straight to the app.</span>
             </div>
           )}
-          {error && <ErrorBox message={error} />}
+          {(configError || error) && <ErrorBox message={(configError ?? error)!} />}
           <div className="grow" />
           {!cfg.enabled && <Button variant="secondary" onClick={() => router.push("/consent")}>Skip sign-in</Button>}
         </>
