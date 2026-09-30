@@ -6,7 +6,7 @@ import { clearPrefs } from "@/lib/prefs";
 import { ButtonLink, Icon, IconCircle, Logo } from "@/components/ui";
 
 const STEPS = [
-  { n: 1, bg: "bg-lavender", title: "Connect your bank", body: "Securely connect your bank account in the app, or upload your own statement." },
+  { n: 1, bg: "bg-lavender", title: "Connect your bank", body: "Securely connect your bank account in the app, or upload your own statement. Bank data syncs weekly." },
   { n: 2, bg: "bg-mint", title: "Check what we found", body: "Fix anything we labelled wrong before we calculate." },
   { n: 3, bg: "bg-pink", title: "Share one verified page", body: "It answers “can you pay?” and nothing more." },
 ];

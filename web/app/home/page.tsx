@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useApi, type Health } from "@/lib/api";
-import { BottomNav, Card, ErrorBox, Icon, IconCircle, Loading, Pill, Screen, Tile } from "@/components/ui";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { api, handleAuthError, useApi, type Health } from "@/lib/api";
+import { BottomNav, Card, ErrorBox, Icon, IconCircle, Loading, Pill, Screen, Spinner, Tile } from "@/components/ui";
 import { SignOutButton } from "@/components/AuthUI";
 
 const STATUS_TONE = { Stable: "green", Watch: "amber", Tight: "red" } as const;
@@ -22,8 +24,48 @@ function Stat({ label, value, unit, sub, colour }: {
   );
 }
 
+type SyncResult = { last_synced: string; new_transactions: number; transaction_count: number };
+
+/** Bank data syncs weekly; the button fetches it again on demand. */
+function SyncCard({ h, onSynced }: { h: Health; onSynced: (last: string) => void }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function resync() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const r = await api<SyncResult>("/sync", { method: "POST" });
+      onSynced(r.last_synced);
+      setMessage(r.new_transactions ? `${r.new_transactions} new transactions` : "Up to date. No new transactions.");
+    } catch (e) {
+      if (!handleAuthError(e, router)) setMessage("Couldn't sync. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="flex items-center gap-3 p-4">
+      <IconCircle className="bg-lavender"><Icon name="bank" stroke="#4B3CC4" /></IconCircle>
+      <div className="flex min-w-0 grow flex-col gap-0.5">
+        <span className="text-[15px] font-medium">Bank data</span>
+        <span className="text-[12px] leading-[1.4] text-muted" aria-live="polite">
+          {busy ? "Syncing with your bank…" : message ?? `Syncs ${h.sync.frequency.toLowerCase()} · ${h.sync.last ? `last synced ${h.sync.last}` : "not synced yet"}`}
+        </span>
+      </div>
+      <button type="button" onClick={resync} disabled={busy}
+        className="flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-ink px-4 text-[14px] font-medium text-white disabled:opacity-60">
+        {busy ? <Spinner /> : null}
+        {busy ? "Syncing" : "Resync now"}
+      </button>
+    </Card>
+  );
+}
+
 export default function Home() {
-  const { data: h, error, reload } = useApi<Health>("/health");
+  const { data: h, error, reload, setData } = useApi<Health>("/health");
 
   return (
     <Screen nav>
@@ -51,7 +93,6 @@ export default function Home() {
             <span className="self-start"><Pill tone={STATUS_TONE[h.status]}>{h.status}</Pill></span>
             <div className="text-[21px] font-medium leading-tight tracking-[-0.02em]">{h.explanation.headline}</div>
             <p className="m-0 text-[14px] leading-[1.55] text-muted">{h.explanation.body}</p>
-            <span className="text-[12px] font-medium text-muted">Plain-language summary of your figures</span>
           </Card>
 
           <div className="grid grid-cols-2 gap-2.5">
@@ -65,6 +106,8 @@ export default function Home() {
               colour={h.status === "Stable" ? "#17756B" : "#95600C"}
               sub={`${h.balance.display} across ${h.account_count} accounts`} />
           </div>
+
+          <SyncCard h={h} onSynced={(last) => setData({ ...h, sync: { ...h.sync, last } })} />
 
           {/* Feature 13 (roadmap): static lean-week warning */}
           <Card className="flex gap-3.5 p-4">

@@ -83,3 +83,14 @@ def test_chart_only_when_opted_in(client):
     token = client.post("/api/proofs", json={"show_chart": True, "include_note": False}).json()["token"]
     snap = client.get(f"/api/proofs/{token}").json()["snapshot"]
     assert len(snap["weekly_series"]) == 26 and "note_label" not in snap
+
+
+def test_manual_resync(client):
+    import re
+    assert client.get("/api/health").json()["sync"] == {"frequency": "Weekly", "last": None}
+    r = client.post("/api/sync").json()
+    assert r["transaction_count"] == 612 and r["new_transactions"] == 0 and r["frequency"] == "Weekly"
+    assert re.fullmatch(r"\d{1,2} [A-Z][a-z]{2}, \d{1,2}:\d{2} (am|pm)", r["last_synced"])
+    assert client.get("/api/health").json()["sync"]["last"] == r["last_synced"]
+    # Figures don't change on a demo resync
+    assert client.get("/api/health").json()["dependable"]["display"] == "$790"

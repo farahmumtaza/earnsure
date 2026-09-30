@@ -33,6 +33,7 @@ class BankDataProvider(Protocol):
     def list_accounts(self, session_id: str, institution_id: str) -> list[dict]: ...
     def connect(self, session_id: str, consent_days: int, institution_id: str | None) -> dict: ...
     def fetch_transactions(self, session_id: str) -> list[dict]: ...
+    def sync(self, session_id: str) -> dict: ...
 
 
 class DummyBankProvider:
@@ -65,6 +66,12 @@ class DummyBankProvider:
 
     def fetch_transactions(self, session_id: str) -> list[dict]:
         return data_gen.build()
+
+    def sync(self, session_id: str) -> dict:
+        """Re-fetch the accounts' transactions. A real CDR provider would pull
+        anything new since the last sync; the demo data never changes."""
+        time.sleep(self.delay_seconds)
+        return {"transaction_count": len(self.fetch_transactions(session_id)), "new_transactions": 0}
 
 
 def get_bank_provider() -> BankDataProvider:

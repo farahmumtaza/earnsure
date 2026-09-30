@@ -110,6 +110,7 @@ export type Health = {
   buffer_weeks: Money;
   balance: Money;
   account_count: number;
+  sync: { frequency: string; last: string | null };
   safe_to_spend: Money;
   top_up: Money;
   lean_alert: { title: string; body: string };

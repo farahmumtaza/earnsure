@@ -23,6 +23,14 @@ def today() -> date:
     """Dates are Sydney dates; Vercel servers run in UTC."""
     return datetime.now(SYDNEY).date()
 
+
+def _sydney_time(value) -> str | None:
+    """Stored timestamp -> '30 Sep, 3:12 pm' in Sydney time."""
+    if not value:
+        return None
+    t = datetime.fromisoformat(str(value)).astimezone(SYDNEY)
+    return f"{t.day} {t:%b}, {t.hour % 12 or 12}:{t:%M} {'am' if t.hour < 12 else 'pm'}"
+
 FREQ_DETAIL = {
     "work_income": lambda s: f"{s['frequency']} · {s['count']} payments",
     "gig_income": lambda s: f"{s['frequency']} · {s['count']} payments",
@@ -160,6 +168,19 @@ def connect(body: ConnectIn | None = None, sid: str = Depends(session_id)):
     return result
 
 
+SYNC_FREQUENCY = "Weekly"
+
+
+@router.post("/sync")
+def sync(sid: str = Depends(session_id)):
+    """Manual resync from Home. Bank data otherwise syncs weekly.
+    demo_sessions.connected_at doubles as the last-synced time."""
+    result = get_bank_provider().sync(sid)
+    now = datetime.now(SYDNEY)
+    get_store().update_session(sid, connected_at=now.isoformat())
+    return {**result, "last_synced": _sydney_time(now), "frequency": SYNC_FREQUENCY}
+
+
 # --- screens 4–5 -----------------------------------------------------------------
 
 @router.get("/streams")
@@ -250,6 +271,8 @@ def health(sid: str = Depends(session_id)):
         "buffer_weeks": fmt.one_dp(s["buffer_weeks"]),
         "balance": fmt.money(s["balance"]),
         "account_count": len(config.ACCOUNTS),
+        "sync": {"frequency": SYNC_FREQUENCY,
+                 "last": _sydney_time(get_store().get_session(sid).get("connected_at"))},
         "safe_to_spend": fmt.money(s["safe"]),
         "top_up": fmt.money(s["top_up"]),
         # Static (feature 13, roadmap)
@@ -389,10 +412,7 @@ def create_proof(body: ProofIn, sid: str = Depends(session_id)):
 
 
 def _opened_display(p: dict) -> str | None:
-    if not p.get("last_opened_at"):
-        return None
-    t = datetime.fromisoformat(str(p["last_opened_at"])).astimezone(SYDNEY)
-    return f"{t.day} {t:%b}, {t:%I:%M %p}".replace(" 0", " ").replace("AM", "am").replace("PM", "pm")
+    return _sydney_time(p.get("last_opened_at"))
 
 
 @router.get("/proofs/current")

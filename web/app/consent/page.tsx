@@ -7,7 +7,7 @@ import { Button, Card, ErrorBox, Icon, IconCircle, PageTitle, Screen, SectionLab
 
 const DURATIONS = [
   { days: 30, label: "Just this once (30 days)", short: "30 days" },
-  { days: 90, label: "90 days, kept up to date", short: "90 days" },
+  { days: 90, label: "90 days, synced weekly", short: "90 days" },
   { days: 365, label: "12 months", short: "12 months" },
 ] as const;
 
