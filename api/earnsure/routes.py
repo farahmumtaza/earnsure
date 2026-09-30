@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
-from . import affordability, classify, config, data_gen, fmt, metrics, proof, trends
+from . import affordability, auth, classify, config, data_gen, fmt, metrics, proof, trends
 from .db import get_store
 from .providers.bank import get_bank_provider
 from .providers.explain import get_explanation_provider
@@ -39,8 +39,28 @@ CONFIRM_REASONS = {
 
 
 # --- session plumbing ----------------------------------------------------------
+# AUTH_ENABLED=false: an anonymous session per browser, identified by a cookie.
+# AUTH_ENABLED=true:  one session per signed-in Supabase user (see auth.py).
 
-def session_id(demo_session_id: str | None = Cookie(default=None)) -> str:
+def _session_for_user(user_id: str) -> tuple[str, bool]:
+    """(session id, created now) for a signed-in user."""
+    store = get_store()
+    found = store.find_session_by_user(user_id)
+    if found:
+        return found["id"], False
+    try:
+        return store.create_session(user_id=user_id), True
+    except Exception:
+        # Two first requests raced; the other one created it (user_id is unique)
+        found = store.find_session_by_user(user_id)
+        if not found:
+            raise
+        return found["id"], False
+
+
+def session_id(request: Request, demo_session_id: str | None = Cookie(default=None)) -> str:
+    if auth.enabled():
+        return _session_for_user(auth.current_user(request).id)[0]
     if not demo_session_id or not get_store().get_session(demo_session_id):
         raise HTTPException(401, "No demo session")
     return demo_session_id
@@ -71,8 +91,17 @@ def _note(sid: str, weekly) -> dict:
 
 # --- screens 1–3 -----------------------------------------------------------------
 
+@router.get("/auth/config")
+def auth_config():
+    """Public: tells the web app whether sign-in is real or a skippable dummy."""
+    return auth.public_config()
+
+
 @router.post("/session")
-def create_session(response: Response, demo_session_id: str | None = Cookie(default=None)):
+def create_session(request: Request, response: Response, demo_session_id: str | None = Cookie(default=None)):
+    if auth.enabled():
+        _, created = _session_for_user(auth.current_user(request).id)
+        return {"ok": True, "new": created}
     store = get_store()
     if demo_session_id and store.get_session(demo_session_id):
         return {"ok": True, "new": False}
@@ -82,6 +111,8 @@ def create_session(response: Response, demo_session_id: str | None = Cookie(defa
 
 @router.delete("/session")
 def delete_session(response: Response, sid: str = Depends(session_id)):
+    """Restart demo: deletes this session's labels, notes and proofs (cascade).
+    With sign-in on, the user's next request starts a fresh session."""
     get_store().delete_session(sid)
     response.delete_cookie(COOKIE, path="/")
     return {"ok": True}

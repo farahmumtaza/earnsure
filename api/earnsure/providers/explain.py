@@ -28,7 +28,7 @@ class TemplateExplanationProvider:
         status = f["status"]
         if status == "Stable":
             headline = "Your income covers your costs. Your savings give you a solid cushion."
-            body = (f"Your dependable income ({f['dependable']} a week) is above your regular costs "
+            body = (f"Your dependable income ({f['dependable']}/week) is above your regular costs "
                     f"({f['regular']}). Your savings cover {f['buffer']} weeks of costs.")
         elif status == "Tight":
             headline = "Money is tight right now. Your savings are low."
@@ -36,7 +36,7 @@ class TemplateExplanationProvider:
                     f"Your savings cover {f['buffer']} weeks of costs.")
         else:
             headline = "Your income covers your costs. Your savings are a bit thin."
-            body = (f"Your dependable income ({f['dependable']} a week) is well above your regular costs "
+            body = (f"Your dependable income ({f['dependable']}/week) is well above your regular costs "
                     f"({f['regular']}). Your savings cover {f['buffer']} weeks of costs. "
                     f"Reaching {f['next_status_threshold']} weeks would move you to Stable.")
         return {"headline": headline, "body": body, "source": "template"}

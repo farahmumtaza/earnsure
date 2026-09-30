@@ -18,13 +18,17 @@ class MemoryStore:
         self.proofs: dict[str, dict] = {}
 
     # sessions
-    def create_session(self) -> str:
+    def create_session(self, user_id: str | None = None) -> str:
         sid = str(uuid.uuid4())
-        self.sessions[sid] = {"id": sid, "consent_days": None, "connected_at": None, "created_at": _now()}
+        self.sessions[sid] = {"id": sid, "user_id": user_id, "consent_days": None, "connected_at": None,
+                              "created_at": _now()}
         return sid
 
     def get_session(self, sid: str) -> dict | None:
         return self.sessions.get(sid)
+
+    def find_session_by_user(self, user_id: str) -> dict | None:
+        return next((s for s in self.sessions.values() if s.get("user_id") == user_id), None)
 
     def update_session(self, sid: str, **fields) -> None:
         self.sessions[sid].update(fields)
@@ -77,8 +81,12 @@ class SupabaseStore:
     def _one(self, res) -> dict | None:
         return res.data[0] if res.data else None
 
-    def create_session(self) -> str:
-        return self.c.table("demo_sessions").insert({}).execute().data[0]["id"]
+    def create_session(self, user_id: str | None = None) -> str:
+        row = {"user_id": user_id} if user_id else {}
+        return self.c.table("demo_sessions").insert(row).execute().data[0]["id"]
+
+    def find_session_by_user(self, user_id: str) -> dict | None:
+        return self._one(self.c.table("demo_sessions").select("*").eq("user_id", user_id).limit(1).execute())
 
     def get_session(self, sid: str) -> dict | None:
         try:

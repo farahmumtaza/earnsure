@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, handleAuthError } from "@/lib/api";
 import { saveConnection, type Connection, type Institution } from "@/lib/prefs";
 import BankLogo from "@/components/BankLogo";
 import { Button, ErrorBox, Icon, IconCircle, Loading, Pill, Spinner } from "@/components/ui";
@@ -52,8 +52,8 @@ export default function BankAuthorise() {
         setTimeout(() => setStep("identify"), 1400);
       })
       .catch((e) => {
-        if (e instanceof ApiError && e.status === 401) router.replace("/");
-        else setError(e instanceof ApiError && e.status === 404 ? "We don't know that bank." : "Could not reach the bank.");
+        if (handleAuthError(e, router)) return;
+        setError(e instanceof ApiError && e.status === 404 ? "We don't know that bank." : "Could not reach the bank.");
       });
   }, [bankId, router]);
 
@@ -82,7 +82,7 @@ export default function BankAuthorise() {
       saveConnection(conn);
       router.replace("/connect");
     } catch (e) {
-      if (e instanceof ApiError && e.status === 401) return router.replace("/");
+      if (handleAuthError(e, router)) return;
       setError(e instanceof Error ? e.message : "Could not connect");
       setStep("accounts");
     }

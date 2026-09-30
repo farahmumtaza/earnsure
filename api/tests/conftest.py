@@ -5,9 +5,12 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Tests always run against the in-memory store with no artificial delay.
+# Tests always run against the in-memory store with no artificial delay,
+# with sign-in off unless a test turns it on.
 os.environ.pop("SUPABASE_URL", None)
 os.environ.pop("SUPABASE_SERVICE_ROLE_KEY", None)
+os.environ.pop("AUTH_ENABLED", None)
+os.environ.pop("AUTH_REQUIRE_MFA", None)
 
 
 @pytest.fixture

@@ -63,7 +63,7 @@ export default function Welcome() {
       <div className="grow" />
       {/* Sticky so the button stays on screen even on the smallest phones */}
       <div className="sticky bottom-0 -mx-5 flex flex-col gap-2 bg-white px-5 pb-4 pt-1">
-        <ButtonLink href="/consent" className="min-h-12!">Get started</ButtonLink>
+        <ButtonLink href="/sign-in" className="min-h-12!">Get started</ButtonLink>
       </div>
     </div>
   );

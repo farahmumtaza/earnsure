@@ -1,4 +1,5 @@
 import { BottomNav, Card, Icon, IconCircle, Pill, Screen, TopBar } from "@/components/ui";
+import { SignOutButton } from "@/components/AuthUI";
 
 // Static screen (features 18 and 19): fixed prototype values, no logic.
 const PERIODS = [
@@ -72,6 +73,7 @@ export default function Rights() {
           Find my award at Fair Work
         </a>
       </Card>
+      <SignOutButton className="self-center" />
       <BottomNav active="Rights" />
     </Screen>
   );

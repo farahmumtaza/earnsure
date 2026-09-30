@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { accessToken, signInRoute } from "./auth";
 
 /** Money and percentages always arrive pre-formatted; the UI only renders `display`. */
 export type Money = { value: number; display: string };
@@ -15,10 +16,15 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (init?.body !== undefined) headers["Content-Type"] = "application/json";
+  // With sign-in on, identify the user with their Supabase token; otherwise the demo cookie does
+  const token = await accessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(`/api${path}`, {
     method: init?.method ?? "GET",
     credentials: "include",
-    headers: init?.body !== undefined ? { "Content-Type": "application/json" } : undefined,
+    headers,
     body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
     cache: "no-store",
   });
@@ -32,7 +38,20 @@ export async function api<T>(path: string, init?: { method?: string; body?: unkn
   return res.json() as Promise<T>;
 }
 
-/** GET with loading/error state. A 401 (no demo session) sends the user back to Welcome. */
+/**
+ * If the API said "not signed in" (401) or "MFA needed" (403), send the user to
+ * the right screen: Welcome in demo mode, or the sign-in / MFA pages. Returns
+ * true when it handled the error.
+ */
+export function handleAuthError(e: unknown, router: { replace: (href: string) => void }): boolean {
+  if (!(e instanceof ApiError)) return false;
+  const mfa = e.status === 403 && e.message === "mfa_required";
+  if (e.status !== 401 && !mfa) return false;
+  signInRoute(mfa ? "mfa" : "signed-out").then((href) => router.replace(href));
+  return true;
+}
+
+/** GET with loading/error state. Auth errors redirect (see handleAuthError). */
 export function useApi<T>(path: string | null) {
   const router = useRouter();
   const [data, setData] = useState<T | null>(null);
@@ -46,8 +65,7 @@ export function useApi<T>(path: string | null) {
       .then((d) => live && (setData(d), setError(null)))
       .catch((e: unknown) => {
         if (!live) return;
-        if (e instanceof ApiError && e.status === 401) router.replace("/");
-        else setError(e instanceof Error ? e.message : "Something went wrong");
+        if (!handleAuthError(e, router)) setError(e instanceof Error ? e.message : "Something went wrong");
       });
     return () => {
       live = false;

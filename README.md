@@ -33,6 +33,29 @@ and CI need no database. Copy `.env.example` to `.env` to use Supabase locally.
    `BANK_PROVIDER=dummy`, `EXPLANATION_PROVIDER=template`, `DEMO_SEED_TOKENS=true`.
 4. Turn off Deployment Protection for Production so `/p/{token}` opens for a landlord without a login.
 
+## Sign-in (optional): Google + two-step verification
+
+One switch, read by the API and passed to the web app through `GET /api/auth/config`:
+
+| `AUTH_ENABLED` | Behaviour |
+|---|---|
+| `false` (default) | Sign-in and MFA screens are labelled **Demo** and can be skipped (demo MFA code `123456`). Sessions are anonymous (cookie), as before. |
+| `true` | "Continue with Google" signs in through Supabase Auth, then an authenticator app (TOTP) is required. Every API call except the public proof page needs the user's Supabase token with MFA passed (`aal2`). Each user gets their own data. |
+
+`AUTH_REQUIRE_MFA=false` allows Google-only sign-in. The landlord page `/p/{token}` never needs sign-in.
+
+To turn it on:
+1. **Google Cloud Console:** OAuth consent screen (External; add test users while in Testing mode), then a
+   **Web application** client with redirect URI `https://<project-ref>.supabase.co/auth/v1/callback` and
+   JavaScript origins for your Vercel domain and `http://localhost:3000`.
+2. **Supabase:** Authentication → Providers → Google (paste the client ID and secret). Authentication → URL
+   Configuration: Site URL = your Vercel domain; Redirect URLs = `https://<your-domain>/**` and
+   `http://localhost:3000/**`. Authenticator-app MFA is on by default.
+3. **Database:** run `supabase/migrations/002_auth_user.sql` in the SQL editor.
+4. **Env vars** (`.env` locally, Vercel for deploys): `AUTH_ENABLED=true`, `SUPABASE_ANON_KEY` (Project
+   Settings → API → publishable/anon key), plus the existing `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+   Redeploy (or restart `make dev`) after changing them.
+
 CI (`.github/workflows/ci.yml`) runs ruff + pytest and lint + typecheck + build on every PR and push to
 `main`. Vercel deploys a preview for every PR and production on every merge to `main`.
 

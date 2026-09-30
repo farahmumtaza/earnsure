@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, ApiError, type Snapshot } from "@/lib/api";
+import { api, type Snapshot, handleAuthError } from "@/lib/api";
 import { loadPrefs, savePrefs, type ProofPrefs } from "@/lib/prefs";
 import ProofStatement from "@/components/ProofStatement";
 import { BottomNav, Button, Card, ErrorBox, Loading, PageTitle, Pill, Screen, TopBar } from "@/components/ui";
@@ -26,8 +26,8 @@ export default function ProofSettings() {
     api<{ snapshot: Snapshot }>("/proofs/preview", { method: "POST", body: prefs })
       .then((r) => live && setPreview(r.snapshot))
       .catch((e) => {
-        if (e instanceof ApiError && e.status === 401) router.replace("/");
-        else if (live) setError(e.message);
+        if (handleAuthError(e, router)) return;
+        if (live) setError(e.message);
       });
     return () => {
       live = false;

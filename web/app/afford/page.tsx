@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, ApiError, type Afford, type AffordResult, type Tone } from "@/lib/api";
+import { api, type Afford, type AffordResult, type Tone, handleAuthError } from "@/lib/api";
 import { loadPrefs, savePrefs } from "@/lib/prefs";
 import { BottomNav, Button, ButtonLink, Card, ErrorBox, Icon, IconCircle, Pill, Screen, TopBar } from "@/components/ui";
 
@@ -69,7 +69,7 @@ export default function AffordPage() {
     try {
       setData(await api<Afford>("/affordability", { method: "POST", body: { type: t, amount: value, frequency: f } }));
     } catch (e) {
-      if (e instanceof ApiError && e.status === 401) return router.replace("/");
+      if (handleAuthError(e, router)) return;
       setError(e instanceof Error ? e.message : "Could not check");
     } finally {
       setBusy(false);

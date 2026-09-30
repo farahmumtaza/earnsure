@@ -155,7 +155,7 @@ Tasks are grouped by day to follow TD §14. ⭐ = on the demo path, must work. �
   - bank search → `GET /api/institutions`
   - `POST /api/connect` with a spinner (1.5 s delay), then 2 "Connected" rows and "Fetched 612 transactions · …"
   - "Add another account" is inert
-  - upload box (front-end dummy): pick a CSV/PDF → short "Reading statement…" delay → shows the file as uploaded; nothing is sent to the API
+  - **upload box is a placeholder**: dashed card, disabled, with a "Coming soon" badge
   - "Analyse my earnings" → `/found`
 - [ ] **2.8** ⭐ **S4 `/found`**: the amber banner "N items need your check" → `/confirm/0`; money in (3 streams with tags); regular outgoings (6); not counted (×14 $2,800, ×2 $96); "Review N items".
 - [ ] **2.9** ⭐ **S5 `/confirm/[index]`**:
