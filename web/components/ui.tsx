@@ -188,10 +188,10 @@ const NAV = [
   { href: "/trends", label: "Trends", icon: "trends" },
   { href: "/afford", label: "Afford", icon: "check" },
   { href: "/proof", label: "Proof", icon: "proof" },
-  { href: "/rights", label: "Rights", icon: "shield" },
+  // Rights (/rights) is hidden for now; the page code is kept
 ] as const;
 
-export function BottomNav({ active }: { active: (typeof NAV)[number]["label"] }) {
+export function BottomNav({ active }: { active: (typeof NAV)[number]["label"] | "Rights" }) {
   return (
     <nav aria-label="Main"
       className="fixed bottom-4 left-1/2 z-10 flex h-[72px] w-[calc(min(100vw,390px)-24px)] -translate-x-1/2 items-center justify-between rounded-full bg-night p-2 shadow-nav">

@@ -92,7 +92,7 @@ export default function ProofSettings() {
               <span>
                 <span className="block text-[15px] font-medium">Show weekly income chart</span>
                 <span className="block text-[13px] leading-[1.45] text-muted">
-                  Off by default for student visa holders. Weekly amounts can hint at hours worked.
+                  Off by default. Week-by-week amounts show more than a landlord needs.
                 </span>
               </span>
             </label>
@@ -118,7 +118,7 @@ export default function ProofSettings() {
           <div className="flex flex-col gap-2 rounded-card bg-soft px-[18px] py-4">
             <div className="text-[14px] font-medium text-muted">Never on your proof</div>
             <div className="text-[14px] leading-relaxed text-sub">
-              Transactions · Merchants · Employers and platforms · Hours worked · Visa status · Money sent home · Account numbers
+              Transactions · Merchants · Employers and platforms · Money sent home · Account numbers
             </div>
           </div>
 

@@ -108,7 +108,7 @@ export default function ProofStatement({ state, checked, snapshot: s, footer }: 
 
       <div className="flex flex-col gap-1 text-[13px] leading-normal text-muted">
         <span>
-          <b className="font-semibold text-sub">Not included:</b> transactions, merchants, employers, hours worked, visa status, account numbers.
+          <b className="font-semibold text-sub">Not included:</b> transactions, merchants, employers, account numbers.
         </span>
         <span>An indicative guide based on the applicant&apos;s bank data. It is not a credit check or lending decision.</span>
       </div>

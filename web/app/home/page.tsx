@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useApi, type Health } from "@/lib/api";
 import { BottomNav, Card, ErrorBox, Icon, IconCircle, Loading, Pill, Screen, Tile } from "@/components/ui";
+import { SignOutButton } from "@/components/AuthUI";
 
 const STATUS_TONE = { Stable: "green", Watch: "amber", Tight: "red" } as const;
 
@@ -88,6 +89,8 @@ export default function Home() {
           </div>
         </>
       )}
+      {/* Only shows when real sign-in is on (AUTH_ENABLED=true) */}
+      <SignOutButton className="self-center" />
       <BottomNav active="Home" />
     </Screen>
   );

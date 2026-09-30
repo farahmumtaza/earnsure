@@ -69,7 +69,7 @@ export default function Consent() {
         <SectionLabel>What we never keep or share</SectionLabel>
         <Row ok={false}>Your bank login or password</Row>
         <Row ok={false}>Individual transactions, on any page you share</Row>
-        <Row ok={false}>Employers, hours worked or visa status</Row>
+        <Row ok={false}>Your employers or where your income comes from</Row>
       </Card>
 
       <div className="flex items-start gap-3 text-[14px] leading-[1.45] text-sub">

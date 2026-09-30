@@ -124,7 +124,7 @@ export default function TrendsPage() {
             </Card>
           )}
           <p className="m-0 text-[13px] leading-normal text-muted">
-            The higher weeks in July were the mid-year break, when student visa holders can work more hours.
+            The higher weeks in July were the mid-year break.
           </p>
         </>
       )}

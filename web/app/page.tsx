@@ -57,7 +57,7 @@ export default function Welcome() {
         <IconCircle size={36} className="border border-field-line bg-white">
           <Icon name="shield" size={18} stroke="#17756B" width={1.9} />
         </IconCircle>
-        <span>We never show your transactions, employers, hours or visa details.</span>
+        <span>We never show your transactions or who you work for.</span>
       </div>
 
       <div className="grow" />
