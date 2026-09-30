@@ -18,7 +18,7 @@ export default function BankLogo({ name, logo, initials, size = 40, fallbackClas
   return (
     <span className="flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-hair bg-white"
       style={{ width: size, height: size }}>
-      <Image src={logo} alt={`${name} logo`} width={size} height={size} onError={() => setFailed(true)}
+      <Image src={logo} alt={`${name} logo`} width={size} height={size} unoptimized onError={() => setFailed(true)}
         className="h-full w-full object-cover" />
     </span>
   );
